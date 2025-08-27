@@ -1,275 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plan Management</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plan Management</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="p-4 md:p-8 flex items-center justify-center min-h-screen">
+<body class="bg-gray-100 font-[Inter] flex flex-col items-center justify-center min-h-screen">
 
-    <div id="app-container" class="bg-white rounded-2xl shadow-xl w-full max-w-4xl p-6 md:p-10 transition-all duration-300 ease-in-out">
-        
-        <!-- App Title -->
-        <div class="text-center mb-8">
-            <h1 class="text-3xl md:text-4xl font-bold text-gray-800">Plan Management</h1>
-            <p class="text-gray-500 mt-2">Simulate a plan upgrade and see it reflected in real-time.</p>
-        </div>
+  <div class="bg-white shadow-lg rounded-xl p-6 max-w-md w-full text-center">
+    <h1 class="text-2xl font-bold text-gray-800 mb-2">Plan Management App</h1>
+    <p class="text-gray-600 mb-4">Manage your subscription plan with Firebase + GitHub Pages.</p>
 
-        <!-- Current User Info -->
-        <div class="bg-indigo-50 p-4 rounded-xl mb-6 shadow-inner">
-            <p class="text-indigo-600 font-semibold text-center md:text-left">Your User ID (for testing):</p>
-            <p id="user-id-display" class="text-indigo-800 break-all mt-1 text-sm md:text-base font-mono text-center md:text-left">Loading...</p>
-        </div>
+    <div id="status" class="mb-4 text-gray-700">🔄 Initializing...</div>
 
-        <!-- Current Plan Display -->
-        <div class="text-center mb-8">
-            <p class="text-gray-600 text-lg">Your Current Plan:</p>
-            <p id="current-plan" class="text-4xl font-extrabold mt-2 text-indigo-600 capitalize transition-colors duration-300">Loading...</p>
-        </div>
+    <button id="upgrade" class="hidden bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700">
+      Upgrade to Premium
+    </button>
+  </div>
 
-        <!-- Plans Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-            <!-- Free Plan Card -->
-            <div id="card-free" class="bg-gray-100 p-6 rounded-2xl shadow-md border-2 border-gray-200 text-center transition-all duration-300 hover:scale-105 hover:shadow-lg">
-                <h3 class="text-2xl font-bold text-gray-700">Free</h3>
-                <p class="text-gray-500 mt-2">Basic features, 1 managed user.</p>
-                <button data-plan="free" class="mt-4 w-full py-2 bg-gray-300 text-gray-600 font-bold rounded-lg cursor-not-allowed opacity-50" disabled>
-                    Current Plan
-                </button>
-            </div>
-            
-            <!-- Standard Plan Card -->
-            <div id="card-standard" class="bg-white p-6 rounded-2xl shadow-md border-2 border-transparent text-center transition-all duration-300 hover:scale-105 hover:shadow-lg">
-                <h3 class="text-2xl font-bold text-indigo-600">Standard</h3>
-                <p class="text-gray-500 mt-2">Unlimited users, more features.</p>
-                <button data-plan="standard" class="btn-upgrade mt-4 w-full py-2 bg-indigo-600 text-white font-bold rounded-lg shadow-md transition-all duration-200 hover:bg-indigo-700 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
-                    Upgrade to Standard
-                </button>
-            </div>
-            
-            <!-- Premium Plan Card -->
-            <div id="card-premium" class="bg-white p-6 rounded-2xl shadow-md border-2 border-transparent text-center transition-all duration-300 hover:scale-105 hover:shadow-lg">
-                <h3 class="text-2xl font-bold text-purple-600">Premium</h3>
-                <p class="text-gray-500 mt-2">All features, priority support.</p>
-                <button data-plan="premium" class="btn-upgrade mt-4 w-full py-2 bg-purple-600 text-white font-bold rounded-lg shadow-md transition-all duration-200 hover:bg-purple-700 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2">
-                    Upgrade to Premium
-                </button>
-            </div>
+    // 🔹 Replace with your Firebase config
+    const firebaseConfig = {
+        apiKey: "AIzaSyBg0sXdxmRfaH9dF5ItiWnCEU2B4LDiCWA",
+        authDomain: "attendanceapp-6769c.firebaseapp.com",
+        databaseURL: "https://attendanceapp-6769c-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "attendanceapp-6769c",
+        storageBucket: "attendanceapp-6769c.firebasestorage.app",
+        messagingSenderId: "317326164920",
+        appId: "1:317326164920:web:ae856d3bc0f64f0f3fc54d"
+    };
 
-        </div>
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
 
-        <!-- Message Box -->
-        <div id="message-box" class="mt-6 p-4 rounded-lg text-center font-semibold text-sm hidden"></div>
+    async function main() {
+      const statusEl = document.getElementById("status");
+      try {
+        // Anonymous login
+        const userCred = await signInAnonymously(auth);
+        const userId = userCred.user.uid;
+        const userDocRef = doc(db, "users", userId);
 
-    </div>
+        // Default plan
+        await setDoc(userDocRef, { plan: "free" }, { merge: true });
 
-    <!-- Firebase SDKs -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // ⚠️ IMPORTANT: REPLACE THE FIREBASE CONFIG WITH YOUR OWN KEYS.
-        // The ones below are from your previous message.
-        const firebaseConfig = {
-          apiKey: "AIzaSyBg0sXdxmRfaH9dF5ItiWnCEU2B4LDiCWA",
-          authDomain: "attendanceapp-6769c.firebaseapp.com",
-          projectId: "attendanceapp-6769c",
-          storageBucket: "attendanceapp-6769c.firebasestorage.app",
-          messagingSenderId: "317326164920",
-          appId: "1:317326164920:web:ae856d3bc0f64f0f3fc54d"
-        };
-
-        // UI Elements
-        const currentPlanElement = document.getElementById('current-plan');
-        const userIdDisplay = document.getElementById('user-id-display');
-        const upgradeButtons = document.querySelectorAll('.btn-upgrade');
-        const messageBox = document.getElementById('message-box');
-        const planCards = {
-            'free': document.getElementById('card-free'),
-            'standard': document.getElementById('card-standard'),
-            'premium': document.getElementById('card-premium')
-        };
-        const upgradeButtonText = {
-            'standard': 'Upgrade to Standard',
-            'premium': 'Upgrade to Premium'
-        };
-
-        // Initialize Firebase services
-        let app, db, auth;
-        try {
-            app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-            console.log("Firebase initialized successfully.");
-        } catch (error) {
-            console.error("Firebase initialization failed:", error);
-            showMessage('Error: Failed to initialize Firebase. Check your console for details.', 'error');
-        }
-
-        /**
-         * Signs in the user anonymously for a simple, quick setup.
-         */
-        async function signInUser() {
-            try {
-                const userCred = await signInAnonymously(auth);
-                const userId = userCred.user.uid;
-                console.log("User signed in anonymously with ID:", userId);
-                userIdDisplay.textContent = userId;
-                setupRealtimeListener(userId);
-            } catch (error) {
-                console.error("Authentication failed:", error);
-                showMessage('Error: Authentication failed. Cannot connect to the database.', 'error');
-            }
-        }
-
-        /**
-         * Sets up a real-time listener to track the user's plan.
-         * @param {string} userId - The unique ID of the current user.
-         */
-        function setupRealtimeListener(userId) {
-            // Path to the user's plan document.
-            // Using "users" as the root collection is a good standard practice for GitHub projects.
-            const userDocRef = doc(db, "users", userId);
-            
-            console.log(`Listening for changes at: ${userDocRef.path}`);
-
-            // This ensures the document exists and has a default plan if it's the first visit.
-            setDoc(userDocRef, { plan: "free" }, { merge: true });
-
-            onSnapshot(userDocRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    const userData = docSnap.data();
-                    const currentPlan = userData.plan || 'free'; // Default to 'free' if plan is not set
-                    console.log("Current plan from database:", currentPlan);
-                    updateUI(currentPlan);
-                } else {
-                    console.warn("User document not found. The plan will default to 'free'.");
-                    updateUI('free'); // Update UI to 'free' if the document doesn't exist yet.
-                }
-            }, (error) => {
-                console.error("Error listening to document:", error);
-                showMessage('Error: Real-time updates failed. Check your console.', 'error');
-            });
-        }
-
-        /**
-         * Updates the UI based on the user's current plan.
-         * @param {string} plan - The current plan ('free', 'standard', or 'premium').
-         */
-        function updateUI(plan) {
-            currentPlanElement.textContent = plan;
-            
-            // Reset all cards and buttons to default state
-            Object.values(planCards).forEach(card => {
-                card.classList.remove('bg-gray-100', 'border-indigo-600', 'border-purple-600', 'current-plan-card');
-                card.classList.add('bg-white', 'border-transparent');
-            });
-
-            // Update all buttons to be clickable
-            upgradeButtons.forEach(button => {
-                const buttonPlan = button.dataset.plan;
-                button.disabled = false;
-                button.classList.remove('bg-gray-300', 'text-gray-600', 'cursor-not-allowed', 'opacity-50');
-                if (buttonPlan === 'standard') {
-                    button.classList.add('bg-indigo-600', 'text-white');
-                    button.textContent = upgradeButtonText['standard'];
-                } else if (buttonPlan === 'premium') {
-                    button.classList.add('bg-purple-600', 'text-white');
-                    button.textContent = upgradeButtonText['premium'];
-                }
-            });
-
-            // Highlight the card for the current plan
-            const currentPlanCard = planCards[plan];
-            if (currentPlanCard) {
-                currentPlanCard.classList.remove('bg-white', 'border-transparent');
-                currentPlanCard.classList.add('bg-gray-100', 'border-2', 'current-plan-card');
-                if (plan === 'standard') {
-                    currentPlanCard.classList.add('border-indigo-600');
-                } else if (plan === 'premium') {
-                    currentPlanCard.classList.add('border-purple-600');
-                } else { // Free plan
-                     currentPlanCard.classList.add('border-gray-200');
-                }
-            }
-
-            // Disable the button for the current plan
-            const currentPlanButton = document.querySelector(`button[data-plan="${plan}"]`);
-            if (currentPlanButton) {
-                currentPlanButton.disabled = true;
-                currentPlanButton.classList.remove('bg-indigo-600', 'text-white', 'bg-purple-600', 'text-white');
-                currentPlanButton.classList.add('bg-gray-300', 'text-gray-600', 'cursor-not-allowed', 'opacity-50');
-                currentPlanButton.textContent = 'Current Plan';
-            }
-        }
-
-        /**
-         * Simulates a plan upgrade by updating the Firestore document.
-         * @param {string} plan - The plan to update to.
-         */
-        async function upgradePlan(plan) {
-            const userId = auth.currentUser?.uid;
-            if (!userId) {
-                showMessage('Error: User not authenticated.', 'error');
-                return;
-            }
-
-            const userDocRef = doc(db, "users", userId);
-            
-            try {
-                // This is the key part that simulates the payment.
-                // It updates the 'plan' field in the user's document.
-                await updateDoc(userDocRef, {
-                    plan: plan,
-                    lastUpdated: new Date().toISOString()
-                });
-                showMessage(`Successfully upgraded to the ${plan} plan!`, 'success');
-            } catch (error) {
-                console.error("Error updating plan:", error);
-                showMessage(`Error: Failed to upgrade plan. Check your console.`, 'error');
-            }
-        }
-
-        /**
-         * Displays a temporary message to the user.
-         * @param {string} message - The message to display.
-         * @param {string} type - The type of message ('success' or 'error').
-         */
-        function showMessage(message, type) {
-            messageBox.textContent = message;
-            messageBox.classList.remove('hidden', 'bg-red-200', 'text-red-700', 'bg-green-200', 'text-green-700');
-            if (type === 'success') {
-                messageBox.classList.add('bg-green-200', 'text-green-700');
-            } else {
-                messageBox.classList.add('bg-red-200', 'text-red-700');
-            }
-            setTimeout(() => {
-                messageBox.classList.add('hidden');
-            }, 5000);
-        }
-
-        // Attach event listeners to the upgrade buttons
-        upgradeButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const plan = button.dataset.plan;
-                upgradePlan(plan);
-            });
+        // Listen for changes
+        onSnapshot(userDocRef, (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            statusEl.textContent = `✅ Current Plan: ${data.plan}`;
+          }
         });
 
-        // Start the application flow
-        signInUser();
+        // Upgrade button
+        const upgradeBtn = document.getElementById("upgrade");
+        upgradeBtn.classList.remove("hidden");
+        upgradeBtn.addEventListener("click", async () => {
+          await updateDoc(userDocRef, { plan: "premium" });
+          alert("🎉 Upgraded to Premium!");
+        });
 
-    </script>
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = "❌ Error: " + err.message;
+      }
+    }
 
+    main();
+  </script>
 </body>
 </html>
