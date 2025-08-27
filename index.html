@@ -8,9 +8,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <script type="module">
         // Firebase imports
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
-        import { getAuth, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, deleteDoc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, updateDoc, doc, deleteDoc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Global variables provided by the canvas environment
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -63,6 +63,7 @@
         function setupRealtimeListener() {
             if (!isAuthReady || !db) return;
 
+            // Use the correct Firestore path as per security rules
             const plansCollection = collection(db, 'artifacts', appId, 'users', userId, 'plans');
             const q = query(plansCollection);
 
@@ -95,6 +96,73 @@
                 planInput.value = '';
             }
         });
+
+        // --- Custom Modal Functions (replaces alert/confirm/prompt) ---
+        function showPromptModal(message, defaultValue, callback) {
+            const modal = document.getElementById('customModal');
+            const messageEl = document.getElementById('modalMessage');
+            const inputEl = document.getElementById('modalInput');
+            const confirmBtn = document.getElementById('modalConfirmBtn');
+            const cancelBtn = document.getElementById('modalCancelBtn');
+
+            messageEl.textContent = message;
+            inputEl.value = defaultValue;
+            inputEl.classList.remove('hidden');
+            cancelBtn.classList.remove('hidden');
+            confirmBtn.textContent = 'OK';
+
+            modal.classList.remove('hidden');
+            inputEl.focus();
+
+            function onConfirm() {
+                callback(inputEl.value);
+                modal.classList.add('hidden');
+                confirmBtn.removeEventListener('click', onConfirm);
+                cancelBtn.removeEventListener('click', onCancel);
+            }
+
+            function onCancel() {
+                callback(null);
+                modal.classList.add('hidden');
+                confirmBtn.removeEventListener('click', onConfirm);
+                cancelBtn.removeEventListener('click', onCancel);
+            }
+
+            confirmBtn.addEventListener('click', onConfirm);
+            cancelBtn.addEventListener('click', onCancel);
+        }
+
+        function showConfirmModal(message, callback) {
+            const modal = document.getElementById('customModal');
+            const messageEl = document.getElementById('modalMessage');
+            const inputEl = document.getElementById('modalInput');
+            const confirmBtn = document.getElementById('modalConfirmBtn');
+            const cancelBtn = document = document.getElementById('modalCancelBtn');
+
+            messageEl.textContent = message;
+            inputEl.classList.add('hidden');
+            cancelBtn.classList.remove('hidden');
+            confirmBtn.textContent = 'Yes';
+            
+            modal.classList.remove('hidden');
+
+            function onConfirm() {
+                callback(true);
+                modal.classList.add('hidden');
+                confirmBtn.removeEventListener('click', onConfirm);
+                cancelBtn.removeEventListener('click', onCancel);
+            }
+
+            function onCancel() {
+                callback(false);
+                modal.classList.add('hidden');
+                confirmBtn.removeEventListener('click', onConfirm);
+                cancelBtn.removeEventListener('click', onCancel);
+            }
+
+            confirmBtn.addEventListener('click', onConfirm);
+            cancelBtn.addEventListener('click', onCancel);
+        }
 
         // --- CRUD Functions ---
         async function addPlan(text) {
@@ -156,19 +224,22 @@
                 button.addEventListener('click', (e) => {
                     const id = e.target.dataset.id;
                     const planText = e.target.closest('li').querySelector('span').textContent;
-                    const newText = prompt('Edit your plan:', planText);
-                    if (newText !== null && newText.trim() !== '') {
-                        updatePlan(id, newText);
-                    }
+                    showPromptModal('Edit your plan:', planText, (newText) => {
+                        if (newText !== null && newText.trim() !== '') {
+                            updatePlan(id, newText);
+                        }
+                    });
                 });
             });
 
             plansList.querySelectorAll('.delete-btn').forEach(button => {
                 button.addEventListener('click', (e) => {
                     const id = e.target.dataset.id;
-                    if (confirm('Are you sure you want to delete this plan?')) {
-                        deletePlan(id);
-                    }
+                    showConfirmModal('Are you sure you want to delete this plan?', (isConfirmed) => {
+                        if (isConfirmed) {
+                            deletePlan(id);
+                        }
+                    });
                 });
             });
         }
