@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plan Management</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+  <h1>Plan Management App</h1>
+  <p>Edit <code>firebaseConfig</code> in index.html with your Firebase keys.</p>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // 🔹 Replace with your Firebase config
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    async function main() {
+      const userCred = await signInAnonymously(auth);
+      const userId = userCred.user.uid;
+      const userDocRef = doc(db, "users", userId);
+      await setDoc(userDocRef, { plan: "free" }, { merge: true });
+
+      onSnapshot(userDocRef, (docSnap) => {
+        console.log("Current data:", docSnap.data());
+      });
+
+      // Example upgrade
+      document.body.insertAdjacentHTML("beforeend", '<button id="upgrade">Upgrade to Premium</button>');
+      document.getElementById("upgrade").addEventListener("click", async () => {
+        await updateDoc(userDocRef, { plan: "premium" });
+        alert("Upgraded to Premium!");
+      });
+    }
+    main();
+  </script>
+</body>
+</html>
